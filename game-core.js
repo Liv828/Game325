@@ -166,7 +166,7 @@ function calculatePlayerScore(rows) {
     }
     const special = getSpecialBonus(rows);
     let total = Math.max(baseScore, special)
-    if (hasOnePillar(rows)) {
+    if (tedutedu(rows)) {
         total += 5;
     }
     return total;
