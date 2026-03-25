@@ -139,10 +139,12 @@ function getSpecialBonus(rows) {  //特殊牌型
     const hasEightNumber = Object.values(count).some(v => v === 8);
     const colorEight = allColorsSame; // 八张颜色相同
     const hasEight = hasEightNumber || colorEight;
+    // 新增：每一行内颜色互不相同（无重复）
+    const eachRowColorsDistinct = rows.every(row => new Set(row.map(c => c.color)).size === row.length);
     
     let best = 0;
     if (dragon && allColorsSame) best = 90; //金龙，龙+所有颜色都一样
-    else if (dragon && allColorsDiff) best = 35; //异龙，龙+所有颜色都不一样
+    else if (dragon && eachRowColorsDistinct) best = 35; //异龙，龙+每行颜色都不一样
     else if (dragon && eachRowSameColor ) best = 35; //青龙，龙+:每一行颜色一样的龙
     else if (hasEight) best = 35; //八尊-35分:有八张一样的
     else if (hasSix) best = 25; //六条-25分:有六张一样的
