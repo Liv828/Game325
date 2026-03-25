@@ -100,6 +100,15 @@ function isBusted(rows) {  //爆了吗
     return cmp1 > 0 || cmp2 > 0;
 }
 
+function isRowIncreasing(row) {
+    if (row.length === 2) {
+        return row[0].number < row[1].number;
+    } else if (row.length === 3) {
+        return row[0].number < row[1].number && row[1].number < row[2].number;
+    }
+    return true; // 空行或异常情况，实际不会发生
+}
+
 function getSpecialBonus(rows) {  //特殊牌型
     const allCards = rows.flat();
     if (allCards.length !== 8) return 0;
@@ -157,14 +166,6 @@ function getSpecialBonus(rows) {  //特殊牌型
 }
 
 
-function isRowIncreasing(row) {
-    if (row.length === 2) {
-        return row[0].number < row[1].number;
-    } else if (row.length === 3) {
-        return row[0].number < row[1].number && row[1].number < row[2].number;
-    }
-    return true; // 空行或异常情况，实际不会发生
-}
 //一柱擎天！！！
 function tedutedu(rows) {
     // 提取每行中的数字集合
