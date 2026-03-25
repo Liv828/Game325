@@ -156,6 +156,15 @@ function getSpecialBonus(rows) {  //特殊牌型
     return best;
 }
 
+
+function isRowIncreasing(row) {
+    if (row.length === 2) {
+        return row[0].number < row[1].number;
+    } else if (row.length === 3) {
+        return row[0].number < row[1].number && row[1].number < row[2].number;
+    }
+    return true; // 空行或异常情况，实际不会发生
+}
 //一柱擎天！！！
 function tedutedu(rows) {
     // 提取每行中的数字集合
