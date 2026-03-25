@@ -33,7 +33,7 @@ function getColorBg(color) {
 }
 
 // ---------- 牌型评估 ----------
-function evaluateRow(cards) {
+function evaluateRow(cards) {  ///每一行单独评分
     if (cards.length === 0) return { type: "高牌", score: 0, details: {} };
     const n = cards.length;
     const numbers = cards.map(c => c.number);
@@ -74,7 +74,7 @@ function evaluateRow(cards) {
     return { type: "高牌", score: 0 };
 }
 
-function compareRows(rowA, rowB) {
+function compareRows(rowA, rowB) {  //两行对比，防止爆牌
     const evalA = evaluateRow(rowA);
     const evalB = evaluateRow(rowB);
     if (TYPE_STRENGTH[evalA.type] !== TYPE_STRENGTH[evalB.type]) {
@@ -93,14 +93,14 @@ function compareRows(rowA, rowB) {
     }
 }
 
-function isBusted(rows) {
+function isBusted(rows) {  //爆了吗
     if (rows[0].length === 0 || rows[1].length === 0 || rows[2].length === 0) return false;
     const cmp1 = compareRows(rows[0], rows[1]);
     const cmp2 = compareRows(rows[1], rows[2]);
     return cmp1 > 0 || cmp2 > 0;
 }
 
-function getSpecialBonus(rows) {
+function getSpecialBonus(rows) {  //特殊牌型
     const allCards = rows.flat();
     if (allCards.length !== 8) return 0;
     const nums = allCards.map(c => c.number);
@@ -118,18 +118,36 @@ function getSpecialBonus(rows) {
     const isRow2Seq = row2.length===3 && (()=>{let n=row2.map(c=>c.number).sort((a,b)=>a-b); return n[1]===n[0]+1 && n[2]===n[1]+1;})();
     const threeSnakes = isRow0Seq && isRow1Seq && isRow2Seq;
     const allColorsDiff = new Set(colors).size === 8;
+    const allColorsSame = new Set(colors).size === 1;
     const allOdd = nums.every(n => n%2===1);
     const allEven = nums.every(n => n%2===0);
     const oddEven = allOdd || allEven;
+    const eachRowSameColor = rows.every(row => new Set(row.map(c => c.color)).size === 1);
+    //6条
+    const colorCount = {};
+    colors.forEach(c => colorCount[c] = (colorCount[c]||0)+1);
+    const hasSixColor = Object.values(colorCount).some(v => v >= 6);
+    const hasSixNumber = Object.values(count).some(v => v >= 6);
+    const hasSix = hasSixNumber || hasSixColor;
+    //八尊
+    const hasEightNumber = Object.values(count).some(v => v === 8);
+    const colorEight = allColorsSame; // 八张颜色相同
+    const hasEight = hasEightNumber || colorEight;
+    
     let best = 0;
-    if (dragon && allColorsDiff) best = 35;
-    else if (dragon) best = 15;
-    else if (threeSnakes) best = 10;
-    else if (allPairs) best = 10;
-    else if (allColorsDiff) best = 10;
-    else if (oddEven) best = 10;
+    if (dragon && allColorsSame) best = 90; //金龙，龙+所有颜色都一样
+    else if (dragon && allColorsDiff) best = 35; //异龙，龙+所有颜色都不一样
+    else if (dragon && eachRowSameColor ) best = 35; //青龙，龙+:每一行颜色一样的龙
+    else if (hasEight) best = 35; //八尊-35分:有八张一样的
+    else if (hasSix) best = 25; //六条-25分:有六张一样的
+    else if (dragon) best = 15; //龙，所有牌连续
+    else if (threeSnakes) best = 10; //三蛇，三行都是顺子
+    else if (allPairs) best = 10; //四个对子或以上
+    else if (allColorsDiff) best = 10; //异色
+    else if (oddEven) best = 10; //全单双
     return best;
 }
+
 
 function calculatePlayerScore(rows) {
     if (isBusted(rows)) return 0;
