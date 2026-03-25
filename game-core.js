@@ -85,12 +85,23 @@ function compareRows(rowA, rowB) {  //两行对比，防止爆牌
             return evalA.details.pairValue - evalB.details.pairValue;
         const thirdA = evalA.details.third || 0;
         const thirdB = evalB.details.third || 0;
-        return thirdA - thirdB;
-    } else {
+        return thirdA - thirdB;} 
+    else if (evalA.type === "高牌") {
+            // 对于非对子（高牌、顺子、同色、同花顺、三条），原有比较最大数字
+            // 现在改为：对于高牌，比较数字降序序列；对于其他类型仍比较最大数字
+        
+            // 降序排序数字
+            const sortedA = [...rowA.map(c => c.number)].sort((a,b)=>b-a);
+            const sortedB = [...rowB.map(c => c.number)].sort((a,b)=>b-a);
+            for (let i = 0; i < Math.min(sortedA.length, sortedB.length); i++) {
+                if (sortedA[i] !== sortedB[i]) return sortedA[i] - sortedB[i];
+            }
+            // 如果所有比较都相等，则长度长的更大？但长度固定，可返回0
+            return 0;} 
+    else {
         const maxA = evalA.details.maxNum || (rowA.length ? Math.max(...rowA.map(c=>c.number)) : 0);
         const maxB = evalB.details.maxNum || (rowB.length ? Math.max(...rowB.map(c=>c.number)) : 0);
-        return maxA - maxB;
-    }
+        return maxA - maxB;}
 }
 
 function isBusted(rows) {  //爆了吗
