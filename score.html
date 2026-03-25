@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牌型算分器 - 犬神连</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .row-block {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        .row-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #e67e22;
+        }
+        .cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .card-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        select {
+            margin: 5px;
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+        }
+        .result-area {
+            background: #ecf0f1;
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .result-line {
+            font-size: 1rem;
+            margin: 8px 0;
+        }
+        button {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #2ecc71;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🃏 犬神连牌型算分器 🃏</h1>
+    <p style="text-align:center">填入三行牌（第一行2张，第二行3张，第三行3张），系统将计算最终得分（含一柱擎天+5分）</p>
+
+    <div class="row-block">
+        <div class="row-title">第一行（容量2）</div>
+        <div class="cards" id="row0"></div>
+    </div>
+    <div class="row-block">
+        <div class="row-title">第二行（容量3）</div>
+        <div class="cards" id="row1"></div>
+    </div>
+    <div class="row-block">
+        <div class="row-title">第三行（容量3）</div>
+        <div class="cards" id="row2"></div>
+    </div>
+
+    <button id="calcBtn">📊 计算得分</button>
+
+    <div class="result-area" id="result">
+        <div class="result-line">点击按钮查看结果</div>
+    </div>
+    <footer>规则：牌型强度递增（爆牌得0分），龙要求每行数字严格递增（如65不算递增）且数字连续1-8或2-9。一柱擎天为三行有公共数字，额外+5分。特殊牌型与基础分取高。</footer>
+</div>
+
+<script src="game-core.js"></script>
+<script>
+    // 从 game-core.js 中获取颜色和数字常量（它们已经是全局）
+    const colorList = typeof COLORS !== 'undefined' ? COLORS : ["红","橙","黄","绿","青","蓝","紫","粉","棕","灰"];
+    const numberList = typeof NUMBERS !== 'undefined' ? NUMBERS : [1,2,3,4,5,6,7,8,9];
+
+    // 生成下拉选项
+    function createSelect(options, defaultValue) {
+        const select = document.createElement('select');
+        options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt;
+            option.textContent = opt;
+            if (opt === defaultValue) option.selected = true;
+            select.appendChild(option);
+        });
+        return select;
+    }
+
+    // 初始化界面：为三行生成牌输入控件
+    const rowSizes = [2,3,3];
+    const containers = [document.getElementById('row0'), document.getElementById('row1'), document.getElementById('row2')];
+
+    for (let i = 0; i < 3; i++) {
+        const size = rowSizes[i];
+        for (let j = 0; j < size; j++) {
+            const div = document.createElement('div');
+            div.className = 'card-input';
+            const colorSelect = createSelect(colorList, '红');
+            const numberSelect = createSelect(numberList, '1');
+            div.appendChild(colorSelect);
+            div.appendChild(numberSelect);
+            containers[i].appendChild(div);
+        }
+    }
+
+    // 获取用户输入
+    function getRowsFromUI() {
+        const rows = [];
+        for (let i = 0; i < 3; i++) {
+            const rowDivs = containers[i].querySelectorAll('.card-input');
+            const row = [];
+            rowDivs.forEach(div => {
+                const colorSelect = div.querySelector('select:first-child');
+                const numberSelect = div.querySelector('select:last-child');
+                row.push({
+                    color: colorSelect.value,
+                    number: parseInt(numberSelect.value)
+                });
+            });
+            rows.push(row);
+        }
+        return rows;
+    }
+
+    // 辅助：获取单行评估文本（调用 game-core 中的 evaluateRow）
+    function getRowEvalText(row) {
+        const eval = evaluateRow(row);
+        return `${eval.type} ${eval.score}分`;
+    }
+
+    // 计算并显示结果
+    document.getElementById('calcBtn').addEventListener('click', () => {
+        const rows = getRowsFromUI();
+        // 调用 game-core 中的 calculatePlayerScore（已包含一柱擎天+5分）
+        const totalScore = calculatePlayerScore(rows);
+        // 获取基础分（各行得分之和）
+        let baseScore = 0;
+        const rowEvals = [];
+        for (let i=0; i<3; i++) {
+            const eval = evaluateRow(rows[i]);
+            baseScore += eval.score;
+            rowEvals.push(`${i===0?'第一行':i===1?'第二行':'第三行'}：${eval.type} ${eval.score}分`);
+        }
+        // 获取特殊牌型得分（从 getSpecialBonus 获取，用于展示）
+        const specialScore = getSpecialBonus(rows);
+        // 一柱擎天判断（使用 game-core 中的 tedutedu 函数，如果存在）
+        let hasTedu = false;
+        if (typeof tedutedu !== 'undefined') {
+            hasTedu = tedutedu(rows);
+        } else {
+            // 如果不存在，手动实现
+            const rowSets = rows.map(row => new Set(row.map(c => c.number)));
+            const commonNumbers = [...rowSets[0]].filter(num => rowSets[1].has(num) && rowSets[2].has(num));
+            hasTedu = commonNumbers.length > 0;
+        }
+
+        const resultDiv = document.getElementById('result');
+        if (isBusted(rows)) {
+            resultDiv.innerHTML = `<div class="result-line" style="color:red">❌ 爆牌（行强度递减）</div>`;
+        } else {
+            let html = `<div class="result-line">📊 基础分合计：${baseScore}</div>`;
+            html += `<div class="result-line">✨ 特殊牌型得分：${specialScore}</div>`;
+            html += `<div class="result-line">🏆 一柱擎天：${hasTedu ? '有（+5分）' : '无'}</div>`;
+            html += `<div class="result-line" style="font-size:1.2rem; font-weight:bold">🎯 最终得分：${totalScore}</div>`;
+            html += `<div class="result-line">📝 各行评估：${rowEvals.join('； ')}</div>`;
+            resultDiv.innerHTML = html;
+        }
+    });
+
+    // 自动填入示例（您之前提供的牌：蓝7黄8；橙3灰2绿1；青6紫4绿5）
+    function fillExample() {
+        // 第一行：蓝7，黄8
+        const row0Divs = containers[0].querySelectorAll('.card-input');
+        if (row0Divs.length >= 2) {
+            const selectColor1 = row0Divs[0].querySelector('select:first-child');
+            const selectNum1 = row0Divs[0].querySelector('select:last-child');
+            selectColor1.value = '蓝';
+            selectNum1.value = '7';
+            const selectColor2 = row0Divs[1].querySelector('select:first-child');
+            const selectNum2 = row0Divs[1].querySelector('select:last-child');
+            selectColor2.value = '黄';
+            selectNum2.value = '8';
+        }
+        // 第二行：橙3，灰2，绿1
+        const row1Divs = containers[1].querySelectorAll('.card-input');
+        if (row1Divs.length >= 3) {
+            const colors = ['橙','灰','绿'];
+            const nums = [3,2,1];
+            for (let i=0;i<3;i++) {
+                const selColor = row1Divs[i].querySelector('select:first-child');
+                const selNum = row1Divs[i].querySelector('select:last-child');
+                selColor.value = colors[i];
+                selNum.value = nums[i];
+            }
+        }
+        // 第三行：青6，紫4，绿5
+        const row2Divs = containers[2].querySelectorAll('.card-input');
+        if (row2Divs.length >= 3) {
+            const colors = ['青','紫','绿'];
+            const nums = [6,4,5];
+            for (let i=0;i<3;i++) {
+                const selColor = row2Divs[i].querySelector('select:first-child');
+                const selNum = row2Divs[i].querySelector('select:last-child');
+                selColor.value = colors[i];
+                selNum.value = nums[i];
+            }
+        }
+    }
+    fillExample();
+</script>
+</body>
+</html>
