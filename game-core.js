@@ -117,10 +117,20 @@ function getSpecialBonus(rows) {  //特殊牌型
     const sortedNums = [...nums].sort((a,b)=>a-b);
     const isSeq = (sortedNums[0] === 1 && sortedNums[7] === 8) || (sortedNums[0] === 2 && sortedNums[7] === 9);
     let dragon = false;
-    if (isSeq && new Set(nums).size === 8) {
-            dragon = true;
+    const sortedRows = rows.map(row => [...row].sort((a,b) => a.number - b.number));
+    const sortedAll = sortedRows.flat().map(c => c.number);
+    // 检查是否连续且无重复（长度8且相邻差1）
+    let isConsecutive = true;
+    for (let i = 0; i < sortedAll.length - 1; i++) {
+        if (sortedAll[i+1] - sortedAll[i] !== 1) {
+            isConsecutive = false;
+            break;
         }
-    };
+    }
+    if (isConsecutive && sortedAll.length === 8) {
+        if (sortedAll[0] === 1 && sortedAll[7] === 8) dragon = true;
+        else if (sortedAll[0] === 2 && sortedAll[7] === 9) dragon = true;
+    }
     const count = {};
     nums.forEach(n => count[n] = (count[n]||0)+1);
     const allPairs = Object.values(count).every(v => v%2 === 0);
