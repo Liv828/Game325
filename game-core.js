@@ -118,8 +118,6 @@ function getSpecialBonus(rows) {  //特殊牌型
     const isSeq = (sortedNums[0] === 1 && sortedNums[7] === 8) || (sortedNums[0] === 2 && sortedNums[7] === 9);
     let dragon = false;
     if (isSeq && new Set(nums).size === 8) {
-        // 新增：检查每一行是否递增
-        if (rows.every(row => isRowIncreasing(row))) {
             dragon = true;
         }
     };
