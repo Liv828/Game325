@@ -148,6 +148,14 @@ function getSpecialBonus(rows) {  //特殊牌型
     return best;
 }
 
+//一柱擎天！！！
+function tedutedu(rows) {
+    // 提取每行中的数字集合
+    const rowSets = rows.map(row => new Set(row.map(c => c.number)));
+    // 找出三行共有的数字（第一行数字集合与第二行、第三行的交集）
+    const commonNumbers = [...rowSets[0]].filter(num => rowSets[1].has(num) && rowSets[2].has(num));
+    return commonNumbers.length > 0;
+}
 
 function calculatePlayerScore(rows) {
     if (isBusted(rows)) return 0;
@@ -157,5 +165,9 @@ function calculatePlayerScore(rows) {
         baseScore += eval.score;
     }
     const special = getSpecialBonus(rows);
-    return Math.max(baseScore, special);
+    let total = Math.max(baseScore, special)
+    if (hasOnePillar(rows)) {
+        total += 5;
+    }
+    return ;
 }
