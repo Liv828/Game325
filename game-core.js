@@ -169,5 +169,5 @@ function calculatePlayerScore(rows) {
     if (hasOnePillar(rows)) {
         total += 5;
     }
-    return ;
+    return total;
 }
