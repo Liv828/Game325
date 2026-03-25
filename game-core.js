@@ -97,7 +97,7 @@ function compareRows(rowA, rowB) {  //两行对比，防止爆牌
                 if (sortedA[i] !== sortedB[i]) return sortedA[i] - sortedB[i];
             }
             // 如果所有比较都相等，则长度长的更大？但长度固定，可返回0
-            return 0;} 
+            return 0; 
     else {
         const maxA = evalA.details.maxNum || (rowA.length ? Math.max(...rowA.map(c=>c.number)) : 0);
         const maxB = evalB.details.maxNum || (rowB.length ? Math.max(...rowB.map(c=>c.number)) : 0);
